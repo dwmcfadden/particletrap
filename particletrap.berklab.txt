@@ -1,0 +1,261 @@
+from vpython import *
+import numpy as np
+from matplotlib import pyplot as plt
+import random
+
+#wave constants
+epsilon = .1
+kL = 20.
+Ws = 0
+theta = pi/6
+
+#particle constants
+V0=10         #initial velocity         #initial position
+x0=0         #initial position
+y0=0
+z0=-5*V0/epsilon*tan(theta)-5*kL/cos(theta)
+
+t=0
+
+#finite along eta
+def Efieldx(x,z,theta,kL,Ws,t):
+    eta=z*sin(theta)-x*cos(theta)   #axis perpendicular to wave propogation
+    ksi=z*cos(theta)+x*sin(theta)   #axis parallel to wave propogation
+    #A=exp(-0.5*(eta/kL)**2)
+    #Ex=A*(-((eta)/(kL)**2)*cos(theta)*cos(ksi-Ws*t)+sin(theta)*sin(ksi-Ws*t))
+    A=exp(-0.5*(ksi/kL)**2)
+    Ex=A*((ksi/(kL**2))*sin(theta)*cos(ksi-Ws*t)+sin(theta)*sin(ksi-Ws*t))
+    return Ex
+
+def Efieldz(x,z,theta,kL,Ws,t):
+    eta=z*sin(theta)-x*cos(theta)   #axis perpendicular to wave propogation
+    ksi=z*cos(theta)+x*sin(theta)   #axis parallel to wave propogation
+    #A=exp(-0.5*(eta/kL)**2)
+    #Ez=A*(-((eta)/(kL)**2)*sin(theta)*cos(ksi-Ws*t)+cos(theta)*sin(ksi-Ws*t))
+    A=exp(-0.5*(ksi/kL)**2)
+    Ez=A*((ksi/(kL**2))*cos(theta)*cos(ksi-Ws*t)+cos(theta)*sin(ksi-Ws*t))
+    return Ez
+
+
+E0=sqrt(Efieldx(x0,z0,theta,kL,Ws,t)**2+Efieldz(x0,z0,theta,kL,Ws,t)**2)
+
+file=open("Particletrap(kL=20)V0=10.eta.berklab.data.txt","a")
+file.seek(0)
+file.truncate()
+#file.write("alpha initial; alpha final; Efield initial; Efield final; phi initial; phi final; mu initial; mu final; Energy inital; Energy final\n")
+#file.write("change in mu; change in energy; % change mu; % change energy"+"\n")
+'''
+dalpha=[]
+denergy=[]
+alpha0plot=[]
+alphafinal=[]
+mu0=[]
+mufinal=[]
+Efieldzi=[]
+Efieldzf=[]
+Energyi=[]
+Energyf=[]
+'''
+N=10000
+PA=0
+i=0
+for i in range(0,N):
+    alpha0=random.uniform(0,pi/2-.01)
+    phi0=random.uniform(0,2*pi)
+    Vz=V0*cos(alpha0)      #parallel to Bfield
+    Vperp=V0*sin(alpha0)     #perpendicular to Bfield
+    Vx=Vperp*cos(phi0)
+    Vy=Vperp*sin(phi0)
+    #alpha0plot.append(alpha0*180/pi)
+    #mu0.append(V0**2*(sin(alpha0))**2)
+    mu0=V0**2*(sin(alpha0))**2
+    #Efieldzi.append(Efieldz(x0,z0,theta,kL,Ws,t))
+    #Energyi.append(V0**2)
+    Energyi=V0**2
+    xplot=[]
+    yplot=[]
+    zplot=[]
+    Vplot=[]
+    alphaplot=[]
+    phiplot=[]
+    time=[]
+    Vxplot=[]
+    Vyplot=[]
+    Vzplot=[]
+    Explot=[]
+    Ezplot=[]
+    Eplot=[]
+    dt=.1
+    tfinal=120/(epsilon*sin(theta))
+    x=x0
+    y=y0
+    z=z0
+    t=0
+    while t<tfinal:
+        x=x+Vx*dt
+        y=y+Vy*dt
+        z=z+Vz*dt
+        if abs(z) > 1.5*abs(z0):  #*abs(sin(alpha0[i]))
+            break
+        xplot.append(x)
+        yplot.append(y)
+        zplot.append(z)
+        Vx1=Vx*cos(epsilon*dt)-(Vy+Efieldx(x,z,theta,kL,Ws,t+dt)/epsilon)*sin(epsilon*dt)
+        Vy1=Vy*cos(epsilon*dt)+Vx*sin(epsilon*dt)+(cos(epsilon*dt)-1)*Efieldx(x,z,theta,kL,Ws,t+dt)/epsilon
+        Vz1=Vz-Efieldz(x,z,theta,kL,Ws,t+dt)*dt
+        Vplot.append(Vx1**2+Vy1**2+Vz1**2)
+        if Vz == 0:
+            alpha=90
+        else:
+            alpha=(180/pi)*np.arctan(sqrt(Vx**2+Vy**2)/Vz)
+        alphaplot.append(alpha)
+        if Vx == 0:
+            phi=90
+        else:
+            phi=(180/pi)*np.arctan(Vy/Vx)
+        phiplot.append(phi)
+        Explot.append(Efieldx(x,z,theta,kL,Ws,t+dt))
+        Ezplot.append(Efieldz(x,z,theta,kL,Ws,t+dt))
+        Eplot.append(sqrt(Efieldx(x,z,theta,kL,Ws,t+dt)**2+Efieldz(x,z,theta,kL,Ws,t+dt)**2))
+        Vx=Vx1
+        Vy=Vy1
+        Vz=Vz1
+        Vxplot.append(Vx)
+        Vyplot.append(Vy)
+        Vzplot.append(Vz)
+        t=t+dt
+        time.append(t)
+    #mufinal.append((Vzplot[-1]**2+Vyplot[-1]**2+Vxplot[-1]**2)*(sin(alphaplot[-1])**2))
+    mufinal=(Vzplot[-1]**2+Vyplot[-1]**2+Vxplot[-1]**2)*(sin(alphaplot[-1])**2)
+    #alphafinal.append(alphaplot[-1])
+    #dalpha.append(alphaplot[-1]-alpha0[i]*180/pi)
+    #denergy.append(Vxplot[-1]**2+Vyplot[-1]**2+Vzplot[-1]**2-V0**2)
+    #Efieldzf.append(Ezplot[-1])
+    #Energyf.append(Vxplot[-1]**2+Vyplot[-1]**2+Vzplot[-1]**2)
+    Energyf=Vxplot[-1]**2+Vyplot[-1]**2+Vzplot[-1]**2
+    #file.write(f"{alpha0*180/pi:.8f}"+" "+f"{alphaplot[-1]:.8f}"+" "+f"{E0:.8f}"+" "+f"{Eplot[-1]:.8f}"+" "+f"{phi0*180/pi:.8f}"+" "+f"{phiplot[-1]:.8f}"+" "+f"{mu0:.8f}"+" "+f"{mufinal:.8f}"+" "+f"{Energyi:.8f}"+" "+f"{Energyf:.8f}"+"\n")
+    if alphaplot[-1] < 0:
+        PA=PA+1
+    dmu=mufinal-mu0
+    denergy=Energyf-Energyi
+    muavg=(mufinal+mu0)/2
+    energyavg=(Energyi+Energyf)/2
+    file.write(f"{dmu:.8f}"+" "+f"{denergy:.8f}"+" "+f"{dmu/muavg:.8f}"+" "+f"{denergy/energyavg:.8f}"+" ")
+    i=i+1
+print("% of reflected particles = ",100*PA/N)
+file.close()
+'''
+plt.subplot(2,2,1)
+plt.scatter(alpha0plot,alphafinal,s=10)
+plt.title('initial vs final pitch angle')
+plt.xlabel('alpha initial')
+plt.ylabel('alpha final')
+
+plt.subplot(2,2,2)
+plt.scatter(Energyi,Energyf,s=10)
+plt.title('initial energy vs final energy')
+plt.xlabel('initial energy')
+plt.ylabel('final energy')
+
+plt.subplot(2,2,3)
+plt.scatter(mu0,mufinal,s=10)
+plt.title('mu initial vs mu final')
+plt.xlabel('mu initial')
+plt.ylabel('mu final')
+
+plt.subplot(2,2,4)
+plt.scatter(Efieldzi,Efieldzf,s=10)
+plt.title('Efield z initial vs Efield z final')
+plt.xlabel('Efield z initial')
+plt.ylabel('Efield z final')
+#print(x,y,z)
+
+plt.subplot(3,2,1)
+plt.plot(xplot, yplot)
+plt.title('x,y')
+plt.xlabel('x')
+plt.ylabel('y')
+
+plt.subplot(3,2,3)
+plt.plot(xplot, zplot)
+plt.title('x,z')
+plt.xlabel('x')
+plt.ylabel('z')
+
+plt.subplot(3,2,5)
+plt.plot(yplot, zplot)
+plt.title('y,z')
+plt.xlabel('y')
+plt.ylabel('z')
+
+plt.subplot(3,2,2)
+plt.plot(time, Vplot)
+plt.title('time, energy')
+plt.xlabel('time')
+plt.ylabel('energy')
+
+plt.subplot(3,2,4)
+plt.plot(time, alphaplot)
+plt.title('time, pitch angle')
+plt.xlabel('time')
+plt.ylabel('pitch angle')
+
+
+plt.subplot(3,2,1)
+plt.plot(time, xplot)
+plt.title('time,x')
+plt.xlabel('time')
+plt.ylabel('x')
+
+plt.subplot(3,2,3)
+plt.plot(time, yplot)
+plt.title('time,y')
+plt.xlabel('time')
+plt.ylabel('y')
+
+plt.subplot(3,2,5)
+plt.plot(time, zplot)
+plt.title('time,z')
+plt.xlabel('time')
+plt.ylabel('z')
+
+plt.subplot(3,2,2)
+plt.plot(time, Vxplot)
+plt.title('time, Vx')
+plt.xlabel('time')
+plt.ylabel('Vx')
+
+plt.subplot(3,2,4)
+plt.plot(time, Vyplot)
+plt.title('time, Vy')
+plt.xlabel('time')
+plt.ylabel('Vy')
+
+plt.subplot(3,2,6)
+plt.plot(time, Vzplot)
+plt.title('time, Vz')
+plt.xlabel('time')
+plt.ylabel('Vz')
+
+
+plt.plot(xplot, Vyplot)
+plt.title('x, Vy')
+plt.xlabel('x')
+plt.ylabel('Vy')
+
+
+plt.subplot(2,1,1)
+plt.plot(time,Explot)
+plt.title('time, Ex')
+plt.xlabel('time')
+plt.ylabel('Ex')
+
+plt.subplot(2,1,2)
+plt.plot(time,Ezplot)
+plt.title('time, Ez')
+plt.xlabel('time')
+plt.ylabel('Ez')
+'''
+plt.show()
+
+
